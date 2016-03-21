@@ -15,20 +15,17 @@
  */
 package com.alibaba.dubbo.common.utils;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
-import java.net.ServerSocket;
-import java.net.UnknownHostException;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.Random;
-import java.util.regex.Pattern;
-
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.logger.Logger;
 import com.alibaba.dubbo.common.logger.LoggerFactory;
+
+import java.io.IOException;
+import java.net.*;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * IP and Port Helper for RPC, 
@@ -267,10 +264,19 @@ public class NetUtils {
      * @return ip address or hostName if UnknownHostException 
      */
     public static String getIpByHost(String hostName) {
-        try{
-            return InetAddress.getByName(hostName).getHostAddress();
-        }catch (UnknownHostException e) {
+        // 判断是否为ip,为了处理高效，暂时使用弱校验规则来判断 linzhengyu 20160321
+//        String patternString = "((25[0-5])|(2[0-4]\\d)|(1\\d\\d)|([1-9]\\d)|\\d)(\\.((25[0-5])|(2[0-4]\\d)|(1\\d\\d)|([1-9]\\d)|\\d)){3}";
+        String patternString = "\\d{1,3}(\\.\\d{1,3}){3}";
+        Pattern pattern = Pattern.compile(patternString);
+        Matcher matcher = pattern.matcher(hostName);
+        if(matcher.matches()){
             return hostName;
+        } else {
+            try{
+                return InetAddress.getByName(hostName).getHostAddress();
+            }catch (UnknownHostException e) {
+                return hostName;
+            }
         }
     }
 
