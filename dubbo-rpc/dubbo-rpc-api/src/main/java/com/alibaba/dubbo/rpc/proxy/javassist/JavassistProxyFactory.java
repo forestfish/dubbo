@@ -18,10 +18,14 @@ package com.alibaba.dubbo.rpc.proxy.javassist;
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.bytecode.Proxy;
 import com.alibaba.dubbo.common.bytecode.Wrapper;
+import com.alibaba.dubbo.common.logger.Logger;
+import com.alibaba.dubbo.common.logger.LoggerFactory;
 import com.alibaba.dubbo.rpc.Invoker;
 import com.alibaba.dubbo.rpc.proxy.AbstractProxyFactory;
 import com.alibaba.dubbo.rpc.proxy.AbstractProxyInvoker;
 import com.alibaba.dubbo.rpc.proxy.InvokerInvocationHandler;
+
+import java.util.Arrays;
 
 /**
  * JavaassistRpcProxyFactory 
@@ -29,7 +33,7 @@ import com.alibaba.dubbo.rpc.proxy.InvokerInvocationHandler;
  * @author william.liangf
  */
 public class JavassistProxyFactory extends AbstractProxyFactory {
-
+    private static final Logger logger = LoggerFactory.getLogger(JavassistProxyFactory.class);
     @SuppressWarnings("unchecked")
     public <T> T getProxy(Invoker<T> invoker, Class<?>[] interfaces) {
         return (T) Proxy.getProxy(interfaces).newInstance(new InvokerInvocationHandler(invoker));
@@ -43,8 +47,26 @@ public class JavassistProxyFactory extends AbstractProxyFactory {
             protected Object doInvoke(T proxy, String methodName, 
                                       Class<?>[] parameterTypes, 
                                       Object[] arguments) throws Throwable {
-                return wrapper.invokeMethod(proxy, methodName, parameterTypes, arguments);
+
+
+                long start = System.currentTimeMillis();
+                Object object = wrapper.invokeMethod(proxy, methodName, parameterTypes, arguments);
+                long elapsed = System.currentTimeMillis() - start;
+                if (elapsed > 500) {
+                    if (logger.isWarnEnabled()) {
+                        logger.warn("JavassistProxyFactory invoke method: " + methodName
+                                + "arguments: " + Arrays.toString(arguments) + ", invoke elapsed " + elapsed + " ms.");
+                    }
+                }
+                return object;
             }
+//            @Override
+//            protected Object doInvoke(T proxy, String methodName,
+//                                      Class<?>[] parameterTypes,
+//                                      Object[] arguments) throws Throwable {
+//
+//                return wrapper.invokeMethod(proxy, methodName, parameterTypes, arguments);
+//            }
         };
     }
 

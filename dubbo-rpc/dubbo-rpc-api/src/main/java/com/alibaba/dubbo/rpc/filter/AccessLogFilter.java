@@ -15,20 +15,6 @@
  */
 package com.alibaba.dubbo.rpc.filter;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.extension.Activate;
 import com.alibaba.dubbo.common.json.JSON;
@@ -37,12 +23,13 @@ import com.alibaba.dubbo.common.logger.LoggerFactory;
 import com.alibaba.dubbo.common.utils.ConcurrentHashSet;
 import com.alibaba.dubbo.common.utils.ConfigUtils;
 import com.alibaba.dubbo.common.utils.NamedThreadFactory;
-import com.alibaba.dubbo.rpc.Filter;
-import com.alibaba.dubbo.rpc.Invocation;
-import com.alibaba.dubbo.rpc.Invoker;
-import com.alibaba.dubbo.rpc.Result;
-import com.alibaba.dubbo.rpc.RpcContext;
-import com.alibaba.dubbo.rpc.RpcException;
+import com.alibaba.dubbo.rpc.*;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * 记录Service的Access Log。
@@ -151,6 +138,7 @@ public class AccessLogFilter implements Filter {
 
     public Result invoke(Invoker<?> invoker, Invocation inv) throws RpcException {
         try {
+            long start = System.currentTimeMillis();
             String accesslog = invoker.getUrl().getParameter(Constants.ACCESS_LOG_KEY);
             if (ConfigUtils.isNotEmpty(accesslog)) {
                 RpcContext context = RpcContext.getContext();
@@ -193,6 +181,13 @@ public class AccessLogFilter implements Filter {
                     LoggerFactory.getLogger(ACCESS_LOG_KEY + "." + invoker.getInterface().getName()).info(msg);
                 } else {
                     log(accesslog, msg);
+                }
+            }
+            long elapsed = System.currentTimeMillis() - start;
+            if (elapsed > 500) {
+                if (logger.isWarnEnabled()) {
+                    logger.warn("AccessLogFilter invoke method: " + inv.getMethodName()
+                            + "arguments: " + Arrays.toString(inv.getArguments()) + ", invoke elapsed " + elapsed + " ms.");
                 }
             }
         } catch (Throwable t) {

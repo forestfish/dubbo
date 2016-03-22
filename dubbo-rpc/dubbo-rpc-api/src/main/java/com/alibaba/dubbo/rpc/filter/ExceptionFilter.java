@@ -15,22 +15,17 @@
  */
 package com.alibaba.dubbo.rpc.filter;
 
-import java.lang.reflect.Method;
-
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.extension.Activate;
 import com.alibaba.dubbo.common.logger.Logger;
 import com.alibaba.dubbo.common.logger.LoggerFactory;
 import com.alibaba.dubbo.common.utils.ReflectUtils;
 import com.alibaba.dubbo.common.utils.StringUtils;
-import com.alibaba.dubbo.rpc.Filter;
-import com.alibaba.dubbo.rpc.Invocation;
-import com.alibaba.dubbo.rpc.Invoker;
-import com.alibaba.dubbo.rpc.Result;
-import com.alibaba.dubbo.rpc.RpcContext;
-import com.alibaba.dubbo.rpc.RpcException;
-import com.alibaba.dubbo.rpc.RpcResult;
+import com.alibaba.dubbo.rpc.*;
 import com.alibaba.dubbo.rpc.service.GenericService;
+
+import java.lang.reflect.Method;
+import java.util.Arrays;
 
 /**
  * ExceptionInvokerFilter
@@ -61,7 +56,15 @@ public class ExceptionFilter implements Filter {
     
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
         try {
+            long start = System.currentTimeMillis();
             Result result = invoker.invoke(invocation);
+            long elapsed = System.currentTimeMillis() - start;
+            if (elapsed > 500) {
+                if (logger.isWarnEnabled()) {
+                    logger.warn("ExceptionFilter invoke method: " + invocation.getMethodName()
+                            + "arguments: " + Arrays.toString(invocation.getArguments()) + ", invoke elapsed " + elapsed + " ms.");
+                }
+            }
             if (result.hasException() && GenericService.class != invoker.getInterface()) {
                 try {
                     Throwable exception = result.getException();
@@ -112,6 +115,7 @@ public class ExceptionFilter implements Filter {
                             + ", exception: " + e.getClass().getName() + ": " + e.getMessage(), e);
                     return result;
                 }
+
             }
             return result;
         } catch (RuntimeException e) {

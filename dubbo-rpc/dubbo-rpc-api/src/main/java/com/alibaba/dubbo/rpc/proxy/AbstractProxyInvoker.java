@@ -15,14 +15,13 @@
  */
 package com.alibaba.dubbo.rpc.proxy;
 
-import java.lang.reflect.InvocationTargetException;
-
 import com.alibaba.dubbo.common.URL;
-import com.alibaba.dubbo.rpc.Invoker;
-import com.alibaba.dubbo.rpc.RpcException;
-import com.alibaba.dubbo.rpc.Invocation;
-import com.alibaba.dubbo.rpc.Result;
-import com.alibaba.dubbo.rpc.RpcResult;
+import com.alibaba.dubbo.common.logger.Logger;
+import com.alibaba.dubbo.common.logger.LoggerFactory;
+import com.alibaba.dubbo.rpc.*;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 
 /**
  * InvokerWrapper
@@ -30,7 +29,7 @@ import com.alibaba.dubbo.rpc.RpcResult;
  * @author william.liangf
  */
 public abstract class AbstractProxyInvoker<T> implements Invoker<T> {
-    
+    private static final Logger logger = LoggerFactory.getLogger(AbstractProxyInvoker.class);
     private final T proxy;
     
     private final Class<T> type;
@@ -69,13 +68,32 @@ public abstract class AbstractProxyInvoker<T> implements Invoker<T> {
 
     public Result invoke(Invocation invocation) throws RpcException {
         try {
-            return new RpcResult(doInvoke(proxy, invocation.getMethodName(), invocation.getParameterTypes(), invocation.getArguments()));
+            long start = System.currentTimeMillis();
+            Result result = new RpcResult(doInvoke(proxy, invocation.getMethodName(), invocation.getParameterTypes(), invocation.getArguments()));
+            long elapsed = System.currentTimeMillis() - start;
+            if (elapsed > 500) {
+                if (logger.isWarnEnabled()) {
+                    logger.warn("AbstractProxyInvoker invoke method: " + invocation.getMethodName()
+                            + "arguments: " + Arrays.toString(invocation.getArguments()) + ", invoke elapsed " + elapsed + " ms.");
+                }
+            }
+            return result;
         } catch (InvocationTargetException e) {
             return new RpcResult(e.getTargetException());
         } catch (Throwable e) {
             throw new RpcException("Failed to invoke remote proxy method " + invocation.getMethodName() + " to " + getUrl() + ", cause: " + e.getMessage(), e);
         }
     }
+
+//    public Result invoke(Invocation invocation) throws RpcException {
+//        try {
+//            return new RpcResult(doInvoke(proxy, invocation.getMethodName(), invocation.getParameterTypes(), invocation.getArguments()));
+//        } catch (InvocationTargetException e) {
+//            return new RpcResult(e.getTargetException());
+//        } catch (Throwable e) {
+//            throw new RpcException("Failed to invoke remote proxy method " + invocation.getMethodName() + " to " + getUrl() + ", cause: " + e.getMessage(), e);
+//        }
+//    }
     
     protected abstract Object doInvoke(T proxy, String methodName, Class<?>[] parameterTypes, Object[] arguments) throws Throwable;
 
