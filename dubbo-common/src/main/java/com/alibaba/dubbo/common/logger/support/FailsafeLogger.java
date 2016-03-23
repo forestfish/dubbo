@@ -17,7 +17,6 @@ package com.alibaba.dubbo.common.logger.support;
 
 import com.alibaba.dubbo.common.Version;
 import com.alibaba.dubbo.common.logger.Logger;
-import com.alibaba.dubbo.common.utils.NetUtils;
 
 public class FailsafeLogger implements Logger {
 
@@ -36,7 +35,8 @@ public class FailsafeLogger implements Logger {
 	}
 
 	private String appendContextMessage(String msg) {
-	    return " [DUBBO] " + msg + ", dubbo version: " + Version.getVersion() + ", current host: " + NetUtils.getLogHost();
+//	    return " [DUBBO] " + msg + ", dubbo version: " + Version.getVersion() + ", current host: " + NetUtils.getLogHost();
+	    return " [DUBBO] " + msg + ", dubbo version: " + Version.getVersion() ;
 	}
 
     public void trace(String msg, Throwable e) {
