@@ -174,11 +174,36 @@ public class AccessLogFilter implements Filter {
                 sn.append(") ");
                 Object[] args = inv.getArguments();
                 if (args != null && args.length > 0) {
+                    long start1 = System.currentTimeMillis();
                     sn.append(JSON.json(args));
+                    long elapsed = System.currentTimeMillis() - start1;
+                    if (elapsed > 500) {
+                        if (logger.isWarnEnabled()) {
+                            logger.warn("AccessLogFilter-2 invoke method: " + inv.getMethodName()
+                                    + "arguments: " + Arrays.toString(inv.getArguments()) + ", invoke elapsed " + elapsed + " ms.");
+                        }
+                    }
                 }
                 String msg = sn.toString();
                 if (ConfigUtils.isDefault(accesslog)) {
-                    LoggerFactory.getLogger(ACCESS_LOG_KEY + "." + invoker.getInterface().getName()).info(msg);
+                    long start2 = System.currentTimeMillis();
+                    Logger logger = LoggerFactory.getLogger(ACCESS_LOG_KEY + "." + invoker.getInterface().getName());
+                    long elapsed = System.currentTimeMillis() - start2;
+                    if (elapsed > 500) {
+                        if (logger.isWarnEnabled()) {
+                            logger.warn("AccessLogFilter-3 invoke method: " + inv.getMethodName()
+                                    + "arguments: " + Arrays.toString(inv.getArguments()) + ", invoke elapsed " + elapsed + " ms.");
+                        }
+                    }
+                    long start3 = System.currentTimeMillis();
+                    logger.info(msg);
+                    elapsed = System.currentTimeMillis() - start3;
+                    if (elapsed > 500) {
+                        if (logger.isWarnEnabled()) {
+                            logger.warn("AccessLogFilter-4 invoke method: " + inv.getMethodName()
+                                    + "arguments: " + Arrays.toString(inv.getArguments()) + ", invoke elapsed " + elapsed + " ms.");
+                        }
+                    }
                 } else {
                     log(accesslog, msg);
                 }
